@@ -1,0 +1,45 @@
+
+--- Audio Validation Benchmark (Sarvam AI) ---
+Total Samples: 100
+Accuracy: 0.49
+Precision: 0.98
+Recall: 0.47
+
+Confusion Matrix:
+True Negatives: 4
+False Positives: 1
+False Negatives: 50
+True Positives: 45
+
+--- Detailed Breakdown (First 10 Mismatches) ---
+Sample bcd15c14-125b-48b2-a857-8992a52f6a22 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported main problem 'సాగునీరు' or the reported caste 'Mala'. The age range '41-59' is consistent with the transcript, but the other data points are not mentioned or consistent.
+  > Transcript: క్యాష్ లో తీసుకోవాలి కదా. బాబా మీ క్యాష్ అండి ఒక్కనే బాబా బాబా ఇక్కడికే. మీ క్యాష్ అండి ఎస్సీ మా వాళ...
+Sample 45c3ab84-6136-4d54-9601-544bdb5d7c6d | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The reported caste 'Settibalija' does not match the transcript which mentions 'చిట్టిపల్లి'. Additionally, the reported main problem 'సాగునీరు' is not mentioned in the transcript. The age range is consistent, but the discrepancies in caste and main problem make the data invalid.
+  > Transcript: మీ కాస్ట్ అండి? చిట్టిపల్లి. ఓకే. నెక్స్ట్ ఇది మామిడి కుదురు మండలమే కదా? ఆ మామిడి కుదురు. మీరు బీ దొ...
+Sample 5b87a98e-34d1-4f46-bded-b50856d41691 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript contains mostly repetitive and irrelevant content with no clear mention of a survey, the reported problem, caste, or age.
+  > Transcript: music ఇంకా పైగా ఉండబడు రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా రా...
+Sample fc0457dc-d165-4b76-99de-99c0cb3953a6 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript is empty ('nan'), indicating no relevant conversation or data to verify against the reported data.
+  > Transcript: nan...
+Sample d273db79-6799-4a4d-9dbd-98c3a2d7cf60 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported main problem 'సాగునీరు' or the caste 'Kapu'. The age range is also not clearly specified as 41-59. Therefore, the reported data is inconsistent with the transcript.
+  > Transcript: ఏముండదండి మీ కాస్ట్ అండి? మగవాసి కోపలండి? ఇంకో ఇది మామిడి కుదురు మండలమే కదండీ? అవును నేను బోటుతో ఇంచ...
+Sample 74d97622-615a-40ce-9a5a-89d9c4e89880 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported problem (సాగునీరు), caste (Kapu), or age range (41-59). It appears to be irrelevant to the survey data provided.
+  > Transcript: ఏమో నాకు వచ్చిన మళ్ళీ ఓకే మళ్ళీ వచ్చేయండి ఓకే బాగా నచ్చింది కదా ఆ కాదండి ముస్లిం అనేది తప్పు పడిపోయి...
+Sample f83f01f0-19d4-4a2f-9a09-e25529c56e90 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported caste 'Settibalija', and the age range '26-40' is not clearly specified. Additionally, the main problem 'త్రాగునీరు' is not consistently identified as the main issue in the transcript.
+  > Transcript: ఏమి రోగటే సెలెక్ట్ చేశారు ఇంకా సెలెక్ట్ చేసి ఉన్నాయి కదా ఆ ఒకటే ఒకటే ఏదో ఒకటే చెప్పాలా రోడ్లు అయిపోయ...
+Sample 6c5b3fa9-dfe2-4fe7-b465-4fbcea61208a | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported problem (త్రాగునీరు), caste (Padmasali/Devanga), or age (18-25). It appears to be irrelevant to the survey.
+  > Transcript: పత్మశాని క్షత్రియ పత్మశాని దేవంగ లేదండి. మీకు దగ్గరలో ఏముంటది కొలం? హలో. మా వీడు చేతి కడిగింది కదా. ...
+Sample d376b01d-7d2b-4f95-a82a-b75cb84eba1a | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The reported caste 'Settibalija' does not match the caste mentioned in the transcript 'BCB'. Additionally, the main problem reported as 'కరెంట్' is not clearly identified as the main problem in the transcript, which lists multiple issues.
+  > Transcript: మళ్ళీ అవుతుందా? అవును ఇక్కడ. మీ పేరేంటి? మీ క్యాస్ట్? క్యాస్ట్ బీసీబీ. చెప్పు పని చెయ్. ఇది మా వాడి ...
+Sample b5f4cb27-cb9a-4e72-9b6f-ba64446ebde0 | GT: Valid | LLM: False | MISMATCH
+  > LLM Reason: The transcript does not mention the reported main problem (సాగునీరు), caste (Mala), or age (60+). The conversation is about general election survey questions and issues, but does not specifically address the reported data.
+  > Transcript: ఇది ఎలక్షన్ సర్వే అని పంచాయతీ ఎలక్షన్ సర్వే మాట. రేపు పంచాయతీ ఎలక్షన్ వస్తాయి కదా దాని గురించి. మీకు...
+... and 41 more mismatches.
