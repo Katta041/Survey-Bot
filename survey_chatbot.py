@@ -22,17 +22,20 @@ except Exception as e:
     st.stop()
 
 # --- Data Loading ---
-DATA_PATH = "/Users/aierarohit/Desktop/Political Data/audio_samples/transcribed_metadata_sarvam.csv"
+# --- Data Loading ---
+# Use relative paths for Cloud Deployment
+DATA_PATH = "audio_samples/transcribed_metadata_sarvam.csv"
 
 @st.cache_data
 def load_data(path):
     if not os.path.exists(path):
+        st.error(f"❌ Data file not found at: {path}")
         return None
     # Load Transcripts
     df_transcripts = pd.read_csv(path)
     
     # Load Excel Data for Election Columns
-    excel_path = "/Users/aierarohit/Desktop/Political Data/Razole_Overall Data_V2.xlsx"
+    excel_path = "Razole_Overall Data_V2.xlsx"
     if os.path.exists(excel_path):
         try:
             df_excel = pd.read_excel(excel_path, sheet_name='Data')
@@ -44,6 +47,7 @@ def load_data(path):
             st.error(f"Error loading Excel data: {e}")
             df = df_transcripts # Fallback
     else:
+        st.warning(f"⚠️ Excel data not found at: {excel_path}. Using transcripts only.")
         df = df_transcripts
 
     # Ensure relevant columns are string type for filtering
@@ -80,6 +84,11 @@ with st.sidebar:
     language = st.radio("Response Language / భాష:", ["English", "Telugu (తెలుగు)"])
     st.markdown("---")
     st.markdown("**Dataset Info:**")
+    if df is None:
+        st.error("❌ Failed to load data. Please check if the data files exist in the repository.")
+        st.stop()
+    
+    # Display Metrics
     st.write(f"Total Records: {len(df)}")
     # st.write(f"Columns: {', '.join(df.columns)}") # Too heavy
     
