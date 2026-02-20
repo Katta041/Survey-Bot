@@ -1,0 +1,70 @@
+Shape: (384, 33)
+Columns:
+- Sample ID
+- Timestamp
+- Location
+- Address
+- Mode
+- Company
+- Surveyor
+- Gender
+- Caste
+- Taluka
+- Locality
+- QC Status
+- QC Score
+- QC Comment
+- QC Remark
+- QC Reviewer
+- QC Reviewed At
+- Total Questions
+- Audio URL
+- Q1: உங்கள் தொகுதி சட்டமன்ற உறுப்பினரின் (MLA) செயல்பாடுகளால் நீங்கள் திருப்தியாக உள்ளீர்களா?/ Are you satisfied with the performance of your constituency MLA?
+- Q2: வரவிருக்கும் சட்டமன்ற தேர்தலில் ஆட்சி மாற்றம் தேவையென நீங்கள் நினைக்கிறீர்களா?/ Do you feel a change in government is needed in the coming assembly Elections?
+- Q3: தமிழ்நாட்டின் அடுத்த முதலமைச்சராக நீங்கள் யாரை ஆதரிக்கிறீர்கள்?/ Whom do you support as Tamil Nadu’s next Chief Minister?
+- Q4: வரவிருக்கும் சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களிக்க உள்ளீர்கள்?/ Which party/ alliance will you vote in the upcoming assembly elections?
+- Q5: கீழ்க்காணும் தலைவர்களில் உண்மையான விவசாய நண்பர் என நீங்கள் யாரை கருதுகிறீர்கள்?/ According to you, who among the following leaders is seen as a true farmer friendly Leader?
+- Q6: கீழ்க்காணும் தலைவர்களில் நல்ல நிர்வாகி என நீங்கள் யாரை கருதுகிறீர்கள்?/ According to you, who among the following leaders you feel is a good Administrator?
+- Q7: கீழ்க்காணும் தலைவர்களில் மக்கள் எளிதாக அணுகக்கூடியவராக இருப்பவர் யார் என நீங்கள் நினைக்கிறீர்கள்?/ According to you, who among the following leaders is accessible and available to people?
+- Q8: முந்தைய (2021) சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களித்தீர்கள்?/ Which party did you vote in the previous(2021) assembly election?
+- Q9: பாலினம்/Gender
+- Q10: வயது பிரிவு/Age Group
+- Q11: பெயர்/Name
+- Q12: கைபேசி எண்/Mobile Number
+- Q13: சாதி/Caste
+- Q14: தொழில்/Occupation
+
+Sample Row 1:
+Sample ID: 4501af9c-5f42-418c-96fc-37392e29bc50
+Timestamp: 19/02/2026, 10:27:11
+Location: 13.149941, 80.294139
+Address: 305/41C, Tiruvottiyur, Chennai, Tamil Nadu, India
+Mode: Online
+Company: RAKESH
+Surveyor: Babitha
+Gender: nan
+Caste: nan
+Taluka: THIRUVOTTIYUR Constituency
+Locality: VARADHARAJAN STREET SATHANGADU
+QC Status: Done
+QC Score: 50.0
+QC Comment: Not Doing it Properly
+QC Remark: unecessry  talk more
+QC Reviewer: Rubiya Tehseen
+QC Reviewed At: 19/02/2026, 10:49:56
+Total Questions: 14
+Audio URL: http://164.52.221.216/localmedia/media/surveys/samples/recording_2026-02-19_10-19-50_samples_V7uo31ode1.mp4
+Q1: உங்கள் தொகுதி சட்டமன்ற உறுப்பினரின் (MLA) செயல்பாடுகளால் நீங்கள் திருப்தியாக உள்ளீர்களா?/ Are you satisfied with the performance of your constituency MLA?: திருப்தியில்லை/ Not Satisfied
+Q2: வரவிருக்கும் சட்டமன்ற தேர்தலில் ஆட்சி மாற்றம் தேவையென நீங்கள் நினைக்கிறீர்களா?/ Do you feel a change in government is needed in the coming assembly Elections?: ஆம், மாற்றம் தேவை/ Yes, need a change
+Q3: தமிழ்நாட்டின் அடுத்த முதலமைச்சராக நீங்கள் யாரை ஆதரிக்கிறீர்கள்?/ Whom do you support as Tamil Nadu’s next Chief Minister?: விஜய் (தமிழகம் வெற்றி கழகம்)/ Vijay (TVK)
+Q4: வரவிருக்கும் சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களிக்க உள்ளீர்கள்?/ Which party/ alliance will you vote in the upcoming assembly elections?: தமிழகம் வெற்றி கழகம்/ Tamilaga Vettri Kazhagam(TVK)
+Q5: கீழ்க்காணும் தலைவர்களில் உண்மையான விவசாய நண்பர் என நீங்கள் யாரை கருதுகிறீர்கள்?/ According to you, who among the following leaders is seen as a true farmer friendly Leader?: விஜய்/ Vijay (TVK)
+Q6: கீழ்க்காணும் தலைவர்களில் நல்ல நிர்வாகி என நீங்கள் யாரை கருதுகிறீர்கள்?/ According to you, who among the following leaders you feel is a good Administrator?: விஜய்/ Vijay (TVK)
+Q7: கீழ்க்காணும் தலைவர்களில் மக்கள் எளிதாக அணுகக்கூடியவராக இருப்பவர் யார் என நீங்கள் நினைக்கிறீர்கள்?/ According to you, who among the following leaders is accessible and available to people?: விஜய்/ Vijay (TVK)
+Q8: முந்தைய (2021) சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களித்தீர்கள்?/ Which party did you vote in the previous(2021) assembly election?: திமுக கூட்டணி கட்சிகள் (திமுக, காங்கிரஸ், விடுதலை சிறுத்தைகள், இந்திய கம்யூனிஸ்ட் கட்சிகள் போன்றவை)/ DMK Alliance Parties(DMK, INC, VCK, CPI/M etc.)
+Q9: பாலினம்/Gender: பெண்/Female
+Q10: வயது பிரிவு/Age Group: 31-40
+Q11: பெயர்/Name: anitha
+Q12: கைபேசி எண்/Mobile Number: 8111027005
+Q13: சாதி/Caste: Vanniyar
+Q14: தொழில்/Occupation: இல்லத்தரசி/ Housewife
