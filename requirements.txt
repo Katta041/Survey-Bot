@@ -6,6 +6,5 @@ plotly
 numpy
 av
 pydub
-pyaudioop
 sarvamai
 requests
