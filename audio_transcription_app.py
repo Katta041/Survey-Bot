@@ -8,6 +8,10 @@ import av
 from pydub import AudioSegment
 from sarvamai import SarvamAI
 import json
+try:
+    import telemetry as _tel
+except Exception:
+    _tel = None
 
 # --- Configuration ---
 st.set_page_config(page_title="AI Audio Insight Engine", page_icon="🎙️", layout="wide")
@@ -148,7 +152,23 @@ def transcribe_audio(wav_bytes):
             return None
             
     my_bar.empty()
-    return " ".join(full_transcript)
+    transcript_text = " ".join(full_transcript)
+
+    # Log Sarvam call to local telemetry DB
+    if _tel:
+        try:
+            total_sec = len(AudioSegment.from_wav(io.BytesIO(wav_bytes))) / 1000.0
+        except Exception:
+            total_sec = len(chunks) * 28.0
+        _tel.log_sarvam_call(
+            app_name="audio_insight_engine",
+            audio_source=st.session_state.get("audio_source_label", "uploaded_file"),
+            audio_duration_sec=total_sec,
+            latency_ms=0,
+            language_code="ta-IN",
+            num_chunks=len(chunks),
+        )
+    return transcript_text
 
 @st.spinner("Analyzing transcript using LLM...")
 def analyze_transcript(transcript):
@@ -177,12 +197,29 @@ def analyze_transcript(transcript):
     Ensure the JSON is valid.
     """
     try:
+        if _tel:
+            span = _tel.Span()
+            span.__enter__()
         response = openai_client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
-        return json.loads(response.choices[0].message.content)
+        result = json.loads(response.choices[0].message.content)
+        if _tel:
+            span.__exit__(None, None, None)
+            usage = response.usage
+            _tel.log_llm_call(
+                app_name="audio_insight_engine",
+                user_query=transcript[:200],
+                response=str(result.get("summary",""))[:300],
+                model="gpt-4o",
+                input_tokens=usage.prompt_tokens if usage else 0,
+                output_tokens=usage.completion_tokens if usage else 0,
+                latency_ms=span.latency_ms,
+                query_type="audio_analysis",
+            )
+        return result
     except Exception as e:
         st.error(f"Analysis failed: {str(e)}")
         return None
