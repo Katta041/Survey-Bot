@@ -18,6 +18,7 @@ class Config:
     DB_DIR = DATA_DIR / "db"
     RAW_DATA_DIR = DATA_DIR / "raw"
     RESULTS_DIR = DATA_DIR / "results"
+    PRODUCTION_DATA_DIR = DATA_DIR / "production"
     
     # Asset directories
     ASSETS_DIR = BASE_DIR / "assets"
@@ -44,7 +45,8 @@ class Config:
         """Ensure all required directories exist."""
         directories = [
             cls.DB_DIR, cls.RAW_DATA_DIR, cls.RESULTS_DIR,
-            cls.LOGOS_DIR, cls.AUDIO_DIR, cls.SARVAM_OUTPUTS_DIR
+            cls.LOGOS_DIR, cls.AUDIO_DIR, cls.SARVAM_OUTPUTS_DIR,
+            cls.PRODUCTION_DATA_DIR
         ]
         for d in directories:
             d.mkdir(parents=True, exist_ok=True)
