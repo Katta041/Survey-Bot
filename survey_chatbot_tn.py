@@ -2,6 +2,10 @@ import streamlit as st
 import pandas as pd
 import openai
 import os
+try:
+    import telemetry as _tel
+except Exception:
+    _tel = None
 
 # --- Configuration ---
 # Set page title and layout
@@ -246,6 +250,8 @@ def generate_response(user_query, lang, history):
     """
     
     try:
+        if _tel:
+            _s = _tel.Span(); _s.__enter__()
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
@@ -254,6 +260,19 @@ def generate_response(user_query, lang, history):
             ],
             response_format={"type": "json_object"}
         )
+        if _tel:
+            _s.__exit__(None, None, None)
+            u = response.usage
+            _tel.log_llm_call(
+                app_name="survey_chatbot_tn",
+                user_query=user_query[:400],
+                response=response.choices[0].message.content[:300],
+                model="gpt-4o",
+                input_tokens=u.prompt_tokens if u else 0,
+                output_tokens=u.completion_tokens if u else 0,
+                latency_ms=_s.latency_ms,
+                query_type="decision",
+            )
         return response.choices[0].message.content
     except Exception as e:
         return f'{{"type": "error", "message": "{str(e)}"}}'
@@ -321,10 +340,25 @@ def synthesize_qualitative_answer(query, context, lang):
     - If the context mentions the topic but has no clear opinion, state "Mentioned without specific opinion."
     """
     try:
+        if _tel:
+            _s = _tel.Span(); _s.__enter__()
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
+        if _tel:
+            _s.__exit__(None, None, None)
+            u = response.usage
+            _tel.log_llm_call(
+                app_name="survey_chatbot_tn",
+                user_query=query[:400],
+                response=response.choices[0].message.content[:300],
+                model="gpt-4o",
+                input_tokens=u.prompt_tokens if u else 0,
+                output_tokens=u.completion_tokens if u else 0,
+                latency_ms=_s.latency_ms,
+                query_type="qualitative_synthesis",
+            )
         return response.choices[0].message.content
     except openai.RateLimitError:
         return "⚠️ **System Busy:** Rate limit hit. I have reduced the context size, try asking again."
