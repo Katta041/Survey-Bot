@@ -5,3 +5,8 @@ __pycache__/
 framework_config.py
 venv/
 .streamlit/secrets.toml
+data/
+scripts/old/
+**/__pycache__/
+**/*.pyc
+.ipynb_checkpoints/

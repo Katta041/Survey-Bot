@@ -4,3 +4,10 @@ openai
 openpyxl
 plotly
 numpy
+av
+pydub
+sarvamai
+requests
+gspread
+google-auth
+python-dotenv
