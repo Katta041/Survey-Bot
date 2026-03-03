@@ -1,226 +1,266 @@
 """
-observability_dashboard.py — Telemetry Dashboard for Streamlit Apps
-Reads from Google Sheets telemetry sink and renders usage, cost, and trace metrics.
+observability_dashboard.py — Local Observability Dashboard
+Queries OpenAI Organization Usage API + estimates Sarvam costs from local logs.
+Run with: streamlit run observability_dashboard.py
 """
 import streamlit as st
 import pandas as pd
-import json
+import requests
 import datetime
+import json
+import os
+from collections import defaultdict
 
 st.set_page_config(
-    page_title="📡 Observability Dashboard",
+    page_title="📡 API Observability Dashboard",
     page_icon="📡",
     layout="wide"
 )
 
-# --- Custom CSS ---
+# ─── Dark Pro CSS ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-    .stApp { background-color: #0f172a; }
-    h1, h2, h3 { color: #e2e8f0; }
-    .metric-card {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        border-left: 4px solid #3b82f6;
-        margin-bottom: 15px;
-    }
-    .metric-val { font-size: 2em; font-weight: bold; color: #60a5fa; }
-    .metric-label { font-size: 0.85em; color: #94a3b8; margin-top: 4px; }
-    .trace-section { background-color: #1e293b; padding: 20px; border-radius: 10px; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+.stApp { background-color: #0f172a; font-family: 'Inter', sans-serif; }
+h1,h2,h3,h4 { color: #e2e8f0 !important; }
+p, li, label { color: #94a3b8 !important; }
+.stSelectbox label, .stDateInput label { color: #94a3b8 !important; }
+.stDataFrame { border-radius: 10px; overflow: hidden; }
+div[data-testid="metric-container"] {
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border-left: 4px solid #3b82f6;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+div[data-testid="metric-container"] > label { color: #94a3b8 !important; font-size: 0.8em; }
+div[data-testid="metric-container"] > div { color: #60a5fa !important; font-size: 1.6em; font-weight: 700; }
+.stTabs [data-baseweb="tab"] { color: #94a3b8; }
+.stTabs [aria-selected="true"] { color: #60a5fa !important; border-bottom: 2px solid #3b82f6; }
+section[data-testid="stSidebar"] { background: #1e293b; }
+section[data-testid="stSidebar"] label { color: #94a3b8 !important; }
+.section-header {
+    font-size: 1.1em; font-weight: 600; color: #e2e8f0;
+    border-bottom: 1px solid #334155; padding-bottom: 8px; margin: 24px 0 16px 0;
+}
 </style>
 """, unsafe_allow_html=True)
 
+# ─── Sidebar Config ────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.title("⚙️ Configuration")
+    st.markdown("---")
 
-# --- Load Data from Google Sheets ---
-@st.cache_data(ttl=60)
-def load_telemetry():
-    """Loads all telemetry data from Google Sheets. TTL=60s for live refresh."""
-    try:
-        import gspread
-        from google.oauth2.service_account import Credentials
+    openai_key = st.text_input("OpenAI API Key", type="password",
+        value=os.environ.get("OPENAI_API_KEY", ""),
+        help="Used to fetch from OpenAI Usage API")
 
-        sa_json = None
-        sheets_id = None
+    sarvam_key = st.text_input("Sarvam API Key", type="password",
+        value="",
+        help="Sarvam has no public usage API — cost is estimated from local logs")
+
+    st.markdown("---")
+    st.markdown("**Date Range**")
+    today = datetime.date.today()
+    start_date = st.date_input("From", value=today - datetime.timedelta(days=30))
+    end_date   = st.date_input("To",   value=today)
+
+    st.markdown("---")
+    app_names = ["All Apps", "Audio Insight Engine", "Survey Chatbot TN"]
+    selected_app = st.selectbox("App Filter", app_names)
+
+    st.markdown("---")
+    if st.button("🔄 Refresh", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+
+# ─── OpenAI Usage API ─────────────────────────────────────────────────────────
+OPENAI_COST = {
+    "gpt-4o":            {"input": 2.50,  "output": 10.00},
+    "gpt-4o-mini":       {"input": 0.15,  "output": 0.60},
+    "gpt-4-turbo":       {"input": 10.00, "output": 30.00},
+    "gpt-3.5-turbo":     {"input": 0.50,  "output": 1.50},
+    "whisper-1":         {"input": 0.006, "output": 0},  # per minute, mapped as input
+}
+SARVAM_COST_PER_MIN = 0.005  # USD/min estimate
+
+@st.cache_data(ttl=120, show_spinner=False)
+def fetch_openai_usage(api_key: str, start: datetime.date, end: datetime.date):
+    """Fetch daily completions usage via OpenAI /v1/usage endpoint."""
+    all_rows = []
+    date_cursor = start
+    headers = {"Authorization": f"Bearer {api_key}"}
+
+    while date_cursor <= end:
+        date_str = date_cursor.strftime("%Y-%m-%d")
         try:
-            if "GOOGLE_SERVICE_ACCOUNT" in st.secrets:
-                sa_json = json.loads(st.secrets["GOOGLE_SERVICE_ACCOUNT"])
-                sheets_id = st.secrets["GOOGLE_SHEETS_ID"]
+            resp = requests.get(
+                "https://api.openai.com/v1/usage",
+                headers=headers,
+                params={"date": date_str},
+                timeout=10
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                for entry in data.get("data", []):
+                    model = entry.get("snapshot_id", "unknown")
+                    n_context = entry.get("n_context_tokens_total", 0)
+                    n_generated = entry.get("n_generated_tokens_total", 0)
+                    n_requests = entry.get("n_requests", 0)
+                    rates = OPENAI_COST.get(model.split(":")[0], {"input": 2.50, "output": 10.00})
+                    cost = (n_context * rates["input"] + n_generated * rates["output"]) / 1_000_000
+                    all_rows.append({
+                        "date": date_str,
+                        "model": model,
+                        "requests": n_requests,
+                        "input_tokens": n_context,
+                        "output_tokens": n_generated,
+                        "cost_usd": round(cost, 6),
+                    })
         except Exception:
             pass
+        date_cursor += datetime.timedelta(days=1)
 
-        if not sa_json:
-            try:
-                import framework_config
-                sa_json = json.loads(getattr(framework_config, "GOOGLE_SERVICE_ACCOUNT", "null"))
-                sheets_id = getattr(framework_config, "GOOGLE_SHEETS_ID", None)
-            except Exception:
-                pass
-
-        if not sa_json or not sheets_id:
-            return None, None, None
-
-        scopes = [
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive",
-        ]
-        creds = Credentials.from_service_account_info(sa_json, scopes=scopes)
-        gc = gspread.authorize(creds)
-        spreadsheet = gc.open_by_key(sheets_id)
-
-        def _to_df(ws):
-            rows = ws.get_all_values()
-            if len(rows) < 2:
-                return pd.DataFrame()
-            return pd.DataFrame(rows[1:], columns=rows[0])
-
-        llm_df = _to_df(spreadsheet.worksheet("llm_traces"))
-        sarvam_df = _to_df(spreadsheet.worksheet("sarvam_traces"))
-        return llm_df, sarvam_df, None
-
-    except Exception as e:
-        return None, None, str(e)
+    return pd.DataFrame(all_rows) if all_rows else pd.DataFrame(
+        columns=["date","model","requests","input_tokens","output_tokens","cost_usd"])
 
 
-llm_df, sarvam_df, err = load_telemetry()
+def load_sarvam_local_log():
+    """
+    Reads local Sarvam call log if it exists.
+    The log is a JSONL file written by the apps in append mode.
+    Falls back to an empty dataframe if not present.
+    """
+    log_path = os.path.join(os.path.dirname(__file__), "sarvam_usage_log.jsonl")
+    rows = []
+    if os.path.exists(log_path):
+        with open(log_path) as f:
+            for line in f:
+                try:
+                    rows.append(json.loads(line.strip()))
+                except Exception:
+                    pass
+    if rows:
+        df = pd.DataFrame(rows)
+        df["date"] = pd.to_datetime(df["timestamp"], errors="coerce").dt.date
+        return df
+    return pd.DataFrame(columns=["date","app","audio_duration_sec","num_chunks","language_code","timestamp"])
 
-# --- Header ---
-st.title("📡 Observability Dashboard")
-st.markdown("Real-time usage, cost, and traceability metrics for all deployed Streamlit apps.")
 
-if err:
-    st.error(f"⚠️ Could not connect to Google Sheets: {err}")
-    st.info("Add `GOOGLE_SERVICE_ACCOUNT` and `GOOGLE_SHEETS_ID` to your Streamlit secrets to enable live data.")
+# ─── Fetch Data ───────────────────────────────────────────────────────────────
+st.title("📡 API Observability Dashboard")
+st.markdown("Live OpenAI usage + Sarvam cost estimates — select an app and date range in the sidebar.")
+st.markdown("---")
+
+if not openai_key:
+    st.warning("⚠️ Enter your OpenAI API Key in the sidebar to load data.")
     st.stop()
 
-if llm_df is None or llm_df.empty:
-    st.warning("No telemetry data yet. Use the apps and data will stream here automatically.")
-    st.stop()
+with st.spinner("Fetching OpenAI usage data..."):
+    oai_df = fetch_openai_usage(openai_key, start_date, end_date)
 
-# --- Preprocess ---
-numeric_cols_llm = ["input_tokens", "output_tokens", "cost_usd", "latency_ms"]
-for col in numeric_cols_llm:
-    if col in llm_df.columns:
-        llm_df[col] = pd.to_numeric(llm_df[col], errors="coerce").fillna(0)
+sarvam_df = load_sarvam_local_log()
 
-if not sarvam_df.empty:
-    for col in ["audio_duration_sec", "cost_usd", "latency_ms"]:
-        if col in sarvam_df.columns:
-            sarvam_df[col] = pd.to_numeric(sarvam_df[col], errors="coerce").fillna(0)
+# Filter sarvam by date
+if not sarvam_df.empty and "date" in sarvam_df.columns:
+    sarvam_df = sarvam_df[
+        (sarvam_df["date"] >= start_date) & (sarvam_df["date"] <= end_date)
+    ]
 
-llm_df["date"] = pd.to_datetime(llm_df["timestamp_utc"], errors="coerce").dt.date
-total_cost_llm = llm_df["cost_usd"].sum()
-total_cost_sarvam = sarvam_df["cost_usd"].sum() if not sarvam_df.empty else 0
-total_cost = total_cost_llm + total_cost_sarvam
+# ─── Key Metrics ──────────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">🔭 Overall Summary</div>', unsafe_allow_html=True)
+
+total_oai_cost = oai_df["cost_usd"].sum() if not oai_df.empty else 0
+total_sarvam_min = (sarvam_df["audio_duration_sec"].sum() / 60) if not sarvam_df.empty and "audio_duration_sec" in sarvam_df.columns else 0
+total_sarvam_cost = total_sarvam_min * SARVAM_COST_PER_MIN
+total_cost = total_oai_cost + total_sarvam_cost
+total_requests = int(oai_df["requests"].sum()) if not oai_df.empty else 0
+total_tokens = int((oai_df["input_tokens"].sum() + oai_df["output_tokens"].sum())) if not oai_df.empty else 0
+sarvam_calls = len(sarvam_df) if not sarvam_df.empty else 0
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("💰 Total Cost (USD)", f"${total_cost:.4f}")
+c2.metric("🤖 OpenAI Cost",      f"${total_oai_cost:.4f}")
+c3.metric("🎙️ Sarvam Cost (est.)", f"${total_sarvam_cost:.4f}")
+c4.metric("📞 LLM Requests",     f"{total_requests:,}")
+c5.metric("🔤 Total Tokens",     f"{total_tokens:,}")
 
 st.markdown("---")
 
-# --- Overview Metrics ---
-st.subheader("🔭 Overall Metrics")
-col1, col2, col3, col4, col5 = st.columns(5)
+# ─── OpenAI Section ───────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">🤖 OpenAI Usage</div>', unsafe_allow_html=True)
 
+if oai_df.empty:
+    st.info("No OpenAI usage data found for this date range.")
+else:
+    tab1, tab2, tab3 = st.tabs(["📅 Daily Cost", "📊 By Model", "📋 Raw Data"])
+
+    with tab1:
+        daily_cost = oai_df.groupby("date")["cost_usd"].sum().reset_index()
+        daily_cost.columns = ["Date", "Cost (USD)"]
+        st.line_chart(daily_cost.set_index("Date"))
+
+    with tab2:
+        model_summary = oai_df.groupby("model").agg(
+            Requests=("requests", "sum"),
+            Input_Tokens=("input_tokens", "sum"),
+            Output_Tokens=("output_tokens", "sum"),
+            Cost_USD=("cost_usd", "sum"),
+        ).reset_index().sort_values("Cost_USD", ascending=False)
+        model_summary["Cost_USD"] = model_summary["Cost_USD"].round(6)
+        st.dataframe(model_summary, use_container_width=True)
+        st.bar_chart(model_summary.set_index("model")["Cost_USD"])
+
+    with tab3:
+        st.dataframe(oai_df.sort_values("date", ascending=False), use_container_width=True)
+
+st.markdown("---")
+
+# ─── Sarvam Section ───────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">🎙️ Sarvam Transcription Usage</div>', unsafe_allow_html=True)
+
+st.info("""
+**Note:** Sarvam does not have a public usage API.
+Sarvam usage is estimated from a local log file (`sarvam_usage_log.jsonl`) written by your apps.
+
+**To enable Sarvam tracking without modifying the deployed apps:**
+You can manually log Sarvam calls from your local `audio_transcription_app.py` by running the app locally and checking the log file.
+""")
+
+if sarvam_df.empty:
+    st.warning("No Sarvam usage data found. Run the Audio Insight Engine locally to generate logs.")
+else:
+    s1, s2, s3 = st.columns(3)
+    s1.metric("Transcription Calls", f"{sarvam_calls}")
+    s2.metric("Total Audio (min)", f"{total_sarvam_min:.1f}")
+    s3.metric("Estimated Cost", f"${total_sarvam_cost:.4f}")
+
+    daily_sarvam = sarvam_df.groupby("date").agg(
+        Calls=("audio_duration_sec","count"),
+        Minutes=("audio_duration_sec","sum"),
+    ).reset_index()
+    daily_sarvam["Minutes"] = (daily_sarvam["Minutes"] / 60).round(2)
+    daily_sarvam["Est_Cost_USD"] = (daily_sarvam["Minutes"] * SARVAM_COST_PER_MIN).round(6)
+    st.dataframe(daily_sarvam, use_container_width=True)
+    st.bar_chart(daily_sarvam.set_index("date")["Est_Cost_USD"])
+
+st.markdown("---")
+
+# ─── App Context Note ─────────────────────────────────────────────────────────
+st.markdown('<div class="section-header">ℹ️ App Reference</div>', unsafe_allow_html=True)
+col1, col2 = st.columns(2)
 with col1:
-    st.markdown(f"""<div class="metric-card">
-        <div class="metric-val">{len(llm_df)}</div>
-        <div class="metric-label">Total LLM Calls</div>
-    </div>""", unsafe_allow_html=True)
-
+    st.markdown("""
+    **🎙️ Audio Insight Engine**
+    - URL: `https://survey-bot-crx465aaxrusnn5pjtxh8h.streamlit.app/`
+    - Models: `gpt-4o` (analysis), Sarvam `saaras:v3` (transcription)
+    """)
 with col2:
-    st.markdown(f"""<div class="metric-card" style="border-left-color:#8b5cf6">
-        <div class="metric-val" style="color:#a78bfa">{len(sarvam_df)}</div>
-        <div class="metric-label">Sarvam Transcriptions</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown("""
+    **🗳️ Survey Chatbot TN**
+    - URL: `https://app-app-kxsuhapap3cjihqm2szeb8.streamlit.app/`
+    - Models: `gpt-4o` (decision + synthesis + formatting)
+    """)
 
-with col3:
-    st.markdown(f"""<div class="metric-card" style="border-left-color:#10b981">
-        <div class="metric-val" style="color:#34d399">${total_cost:.4f}</div>
-        <div class="metric-label">Total API Cost (USD)</div>
-    </div>""", unsafe_allow_html=True)
-
-with col4:
-    total_tokens = int(llm_df["input_tokens"].sum() + llm_df["output_tokens"].sum())
-    st.markdown(f"""<div class="metric-card" style="border-left-color:#f59e0b">
-        <div class="metric-val" style="color:#fbbf24">{total_tokens:,}</div>
-        <div class="metric-label">Total Tokens Processed</div>
-    </div>""", unsafe_allow_html=True)
-
-with col5:
-    avg_latency = llm_df["latency_ms"].mean()
-    st.markdown(f"""<div class="metric-card" style="border-left-color:#ef4444">
-        <div class="metric-val" style="color:#f87171">{avg_latency:.0f}ms</div>
-        <div class="metric-label">Avg LLM Latency</div>
-    </div>""", unsafe_allow_html=True)
-
-st.markdown("---")
-
-# --- Per-App Breakdown ---
-st.subheader("📱 Per-App Breakdown")
-app_group = llm_df.groupby("app_name").agg(
-    LLM_Calls=("cost_usd", "count"),
-    Total_Cost_USD=("cost_usd", "sum"),
-    Avg_Latency_ms=("latency_ms", "mean"),
-    Total_Input_Tokens=("input_tokens", "sum"),
-    Total_Output_Tokens=("output_tokens", "sum"),
-).reset_index()
-app_group["Total_Cost_USD"] = app_group["Total_Cost_USD"].round(6)
-app_group["Avg_Latency_ms"] = app_group["Avg_Latency_ms"].round(1)
-st.dataframe(app_group, use_container_width=True)
-
-st.markdown("---")
-
-# --- Daily Cost / Usage Charts ---
-st.subheader("📅 Daily Usage & Cost")
-
-daily = llm_df.groupby(["date", "app_name"]).agg(
-    LLM_Calls=("cost_usd", "count"),
-    Cost_USD=("cost_usd", "sum"),
-    Tokens=("input_tokens", "sum"),
-).reset_index()
-daily["date"] = daily["date"].astype(str)
-
-tab1, tab2, tab3 = st.tabs(["💰 Daily Cost", "📞 Daily Calls", "🔤 Daily Tokens"])
-
-with tab1:
-    pivot_cost = daily.pivot_table(index="date", columns="app_name", values="Cost_USD", aggfunc="sum").fillna(0)
-    st.line_chart(pivot_cost)
-
-with tab2:
-    pivot_calls = daily.pivot_table(index="date", columns="app_name", values="LLM_Calls", aggfunc="sum").fillna(0)
-    st.bar_chart(pivot_calls)
-
-with tab3:
-    pivot_tok = daily.pivot_table(index="date", columns="app_name", values="Tokens", aggfunc="sum").fillna(0)
-    st.area_chart(pivot_tok)
-
-st.markdown("---")
-
-# --- Trace Table ---
-st.subheader("🔍 Full Trace Log (LLM Calls)")
-app_filter = st.selectbox("Filter by App", options=["All"] + llm_df["app_name"].unique().tolist())
-qtype_filter = st.selectbox("Filter by Query Type", options=["All"] + llm_df["query_type"].unique().tolist())
-
-filtered = llm_df.copy()
-if app_filter != "All":
-    filtered = filtered[filtered["app_name"] == app_filter]
-if qtype_filter != "All":
-    filtered = filtered[filtered["query_type"] == qtype_filter]
-
-display_cols = ["timestamp_utc", "app_name", "query_type", "user_query",
-                "response_preview", "model", "input_tokens", "output_tokens",
-                "cost_usd", "latency_ms", "trace_id"]
-st.dataframe(filtered[[c for c in display_cols if c in filtered.columns]].sort_values("timestamp_utc", ascending=False), use_container_width=True)
-
-if not sarvam_df.empty:
-    st.markdown("---")
-    st.subheader("🎙️ Sarvam Transcription Traces")
-    st.dataframe(sarvam_df.sort_values("timestamp_utc", ascending=False), use_container_width=True)
-
-# --- Auto-refresh ---
-st.sidebar.markdown("### ⚙️ Settings")
-if st.sidebar.button("🔄 Refresh Data"):
-    st.cache_data.clear()
-    st.rerun()
-
-st.sidebar.markdown(f"**Last updated:** {datetime.datetime.now().strftime('%H:%M:%S')}")
-st.sidebar.markdown("Data refreshes automatically every **60 seconds**.")
+st.caption(f"Last refreshed: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')} IST  |  OpenAI data has ~2min cache TTL.")
