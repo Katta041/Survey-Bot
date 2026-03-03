@@ -8,6 +8,7 @@ import av
 from pydub import AudioSegment
 from sarvamai import SarvamAI
 import json
+import telemetry
 
 # --- Configuration ---
 st.set_page_config(page_title="AI Audio Insight Engine", page_icon="🎙️", layout="wide")
@@ -68,6 +69,10 @@ if not openai_api_key or not sarvam_api_key:
 os.environ["OPENAI_API_KEY"] = openai_api_key
 openai_client = openai.OpenAI(api_key=openai_api_key)
 sarvam_client = SarvamAI(api_subscription_key=sarvam_api_key)
+
+# Telemetry: one trace per user session
+if "trace_id" not in st.session_state:
+    st.session_state.trace_id = telemetry.new_trace_id()
 
 
 # --- Helper Functions ---
@@ -148,6 +153,23 @@ def transcribe_audio(wav_bytes):
             return None
             
     my_bar.empty()
+
+    # --- Log Sarvam transcription to telemetry ---
+    try:
+        audio_segment_full = AudioSegment.from_wav(io.BytesIO(wav_bytes))
+        duration_sec = len(audio_segment_full) / 1000.0
+    except Exception:
+        duration_sec = len(chunks) * 28.0  # fallback estimate
+    telemetry.log_sarvam_call(
+        app_name="audio_insight_engine",
+        trace_id=st.session_state.get("trace_id", telemetry.new_trace_id()),
+        audio_source=st.session_state.get("audio_source_label", "uploaded_file"),
+        audio_duration_sec=duration_sec,
+        latency_ms=getattr(wav_bytes, "_telemetry_latency_ms", 0),
+        language_code="ta-IN",
+        num_chunks=len(chunks),
+    )
+
     return " ".join(full_transcript)
 
 @st.spinner("Analyzing transcript using LLM...")
@@ -177,12 +199,26 @@ def analyze_transcript(transcript):
     Ensure the JSON is valid.
     """
     try:
-        response = openai_client.chat.completions.create(
+        with telemetry.Span() as span:
+            response = openai_client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"}
+            )
+        result = json.loads(response.choices[0].message.content)
+        usage = response.usage
+        telemetry.log_llm_call(
+            app_name="audio_insight_engine",
+            trace_id=st.session_state.get("trace_id", telemetry.new_trace_id()),
+            user_query=transcript[:200],
+            response=str(result.get("summary", ""))[:300],
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            input_tokens=usage.prompt_tokens if usage else 0,
+            output_tokens=usage.completion_tokens if usage else 0,
+            latency_ms=span.latency_ms,
+            query_type="audio_analysis",
         )
-        return json.loads(response.choices[0].message.content)
+        return result
     except Exception as e:
         st.error(f"Analysis failed: {str(e)}")
         return None

@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import openai
 import os
+import time
+import telemetry
 
 # --- Configuration ---
 # Set page title and layout
@@ -102,6 +104,9 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 if "last_search" not in st.session_state:
     st.session_state.last_search = {"keywords": [], "topic": "", "cited_ids": []}
+# Telemetry: one trace per user session
+if "trace_id" not in st.session_state:
+    st.session_state.trace_id = telemetry.new_trace_id()
 
 # --- Sidebar & Settings ---
 with st.sidebar:
@@ -246,13 +251,26 @@ def generate_response(user_query, lang, history):
     """
     
     try:
-        response = client.chat.completions.create(
+        with telemetry.Span() as span:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_query}
+                ],
+                response_format={"type": "json_object"}
+            )
+        usage = response.usage
+        telemetry.log_llm_call(
+            app_name="survey_chatbot_tn",
+            trace_id=st.session_state.get("trace_id", telemetry.new_trace_id()),
+            user_query=user_query[:400],
+            response=response.choices[0].message.content[:300],
             model="gpt-4o",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_query}
-            ],
-            response_format={"type": "json_object"}
+            input_tokens=usage.prompt_tokens if usage else 0,
+            output_tokens=usage.completion_tokens if usage else 0,
+            latency_ms=span.latency_ms,
+            query_type="decision",
         )
         return response.choices[0].message.content
     except Exception as e:
@@ -321,9 +339,22 @@ def synthesize_qualitative_answer(query, context, lang):
     - If the context mentions the topic but has no clear opinion, state "Mentioned without specific opinion."
     """
     try:
-        response = client.chat.completions.create(
+        with telemetry.Span() as span:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[{"role": "user", "content": prompt}]
+            )
+        usage = response.usage
+        telemetry.log_llm_call(
+            app_name="survey_chatbot_tn",
+            trace_id=st.session_state.get("trace_id", telemetry.new_trace_id()),
+            user_query=query[:400],
+            response=response.choices[0].message.content[:300],
             model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
+            input_tokens=usage.prompt_tokens if usage else 0,
+            output_tokens=usage.completion_tokens if usage else 0,
+            latency_ms=span.latency_ms,
+            query_type="qualitative_synthesis",
         )
         return response.choices[0].message.content
     except openai.RateLimitError:

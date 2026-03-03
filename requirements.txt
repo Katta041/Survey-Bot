@@ -8,3 +8,5 @@ av
 pydub
 sarvamai
 requests
+gspread
+google-auth
