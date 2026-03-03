@@ -110,7 +110,7 @@ class SurveyChatEngine:
     def search_transcripts(self, keywords: list, topic: str, exclude_ids: list = []):
         """Searches transcripts for keywords and returns context for LLM."""
         mask = self.df['transcript'].str.contains('|'.join(keywords), case=False, na=False)
-        matches = self.df[mask]
+        matches = self.df[mask].copy()
         
         if exclude_ids:
             matches = matches[~matches['sample_id'].isin(exclude_ids)]
