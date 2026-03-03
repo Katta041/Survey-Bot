@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
-    # ─── PATHS ─────────────────────────────────────────────────────────────
-    BASE_DIR = Path("/Users/aierarohit/Desktop/Political Data").resolve()
+    # Detect base directory (project root)
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
     
     # Source directories
     SRC_DIR = BASE_DIR / "src"
