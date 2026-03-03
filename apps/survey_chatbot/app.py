@@ -23,52 +23,51 @@ if "engine" not in st.session_state:
     st.session_state.engine = None
 
 # --- Data Loading ---
-# Use Absolute Paths from Config
-DATA_PATH = Config.AUDIO_DIR / "tn_samples/tn_transcribed_metadata_sarvam.csv"
-EXCEL_PATH = Config.RAW_DATA_DIR / "Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+PROD_DATA_PATH = Config.PRODUCTION_DATA_DIR / "tn_survey_sanitized.csv"
+RAW_TRANSCRIPT_PATH = Config.AUDIO_DIR / "tn_samples/tn_transcribed_metadata_sarvam.csv"
+RAW_EXCEL_PATH = Config.RAW_DATA_DIR / "Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
 
 @st.cache_data
-def load_data(path):
-    if not os.path.exists(path):
-        st.error(f"❌ Data file not found at: {path}")
-        return None
-    # Load Transcripts
-    df_transcripts = pd.read_csv(path)
+def load_data():
+    # 1. Try Sanitized Production Data first (Recommended for Cloud)
+    if os.path.exists(PROD_DATA_PATH):
+        df = pd.read_csv(PROD_DATA_PATH)
     
-    # Load Excel Data for Election Columns
-    excel_path = EXCEL_PATH
-    if os.path.exists(excel_path):
-        try:
-            df_excel = pd.read_excel(excel_path) # Auto-picks first sheet
-            # Normalize column names if needed
-            # Drop columns from df_transcripts that we will get from Excel
-            cols_to_drop = ['Caste', 'Age', 'Gender', 'Q1_MLA', 'Q3_Next_CM']
-            for c in cols_to_drop:
-                if c in df_transcripts.columns:
-                    df_transcripts.drop(columns=[c], inplace=True)
-                    
-            df = pd.merge(df_transcripts, df_excel, left_on='url', right_on='Audio URL', how='left', suffixes=('', '_excel'))
-        except Exception as e:
-            st.error(f"Error loading Excel data: {e}")
-            df = df_transcripts # Fallback
+    # 2. Fallback to Raw Local Files & Merging
+    elif os.path.exists(RAW_TRANSCRIPT_PATH):
+        df_transcripts = pd.read_csv(RAW_TRANSCRIPT_PATH)
+        if os.path.exists(RAW_EXCEL_PATH):
+            try:
+                df_excel = pd.read_excel(RAW_EXCEL_PATH)
+                # Map Excel columns to application standard
+                mapping = {
+                    'Audio URL': 'url',
+                    'Q1: உங்கள் தொகுதி சட்டமன்ற உறுப்பினரின் (MLA) செயல்பாடுகளால் நீங்கள் திருப்தியாக உள்ளீர்களா?/ Are you satisfied with the performance of your constituency MLA?': 'MLA_Satisfaction',
+                    'Q2: வரவிருக்கும் சட்டமன்ற தேர்தலில் ஆட்சி மாற்றம் தேவையென நீங்கள் நினைக்கிறீர்களா?/ Do you feel a change in government is needed in the coming assembly Elections?': 'Desires_Change',
+                    'Q3: தமிழ்நாட்டின் அடுத்த முதலமைச்சராக நீங்கள் யாரை ஆதரிக்கிறீர்கள்?/ Whom do you support as Tamil Nadu’s next Chief Minister?': 'Next_CM',
+                    'Q4: வரவிருக்கும் சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களிக்க உள்ளீர்கள்?/ Which party/ alliance will you vote in the upcoming assembly elections?': 'Vote_2026',
+                    'Q9: பாலினம்/Gender': 'Gender_Excel',
+                    'Q10: வயது பிரிவு/Age Group': 'Age_Group',
+                    'Q13: சாதி/Caste': 'Caste_Excel'
+                }
+                df_excel_safe = df_excel[list(mapping.keys())].rename(columns=mapping)
+                df = pd.merge(df_transcripts, df_excel_safe, on='url', how='left')
+                
+                # Harmonize columns
+                if 'Gender' in df.columns and 'Gender_Excel' in df.columns:
+                    df['Gender'] = df['Gender'].fillna(df['Gender_Excel'])
+                if 'Caste' in df.columns and 'Caste_Excel' in df.columns:
+                    df['Caste'] = df['Caste'].fillna(df['Caste_Excel'])
+            except Exception as e:
+                st.warning(f"⚠️ Failed to merge Excel data: {e}")
+                df = df_transcripts
+        else:
+            df = df_transcripts
     else:
-        st.warning(f"⚠️ Excel data not found at: {excel_path}. Using transcripts only.")
-        df = df_transcripts
+        st.error(f"❌ No data found at {PROD_DATA_PATH} or {RAW_TRANSCRIPT_PATH}")
+        return None
 
     # Ensure relevant columns are string type for filtering
-    # Map long questions to aliases for easier access
-    column_aliases = {
-        'Q1: உங்கள் தொகுதி சட்டமன்ற உறுப்பினரின் (MLA) செயல்பாடுகளால் நீங்கள் திருப்தியாக உள்ளீர்களா?/ Are you satisfied with the performance of your constituency MLA?': 'MLA_Satisfaction',
-        'Q2: வரவிருக்கும் சட்டமன்ற தேர்தலில் ஆட்சி மாற்றம் தேவையென நீங்கள் நினைக்கிறீர்களா?/ Do you feel a change in government is needed in the coming assembly Elections?': 'Desires_Change',
-        'Q3: தமிழ்நாட்டின் அடுத்த முதலமைச்சராக நீங்கள் யாரை ஆதரிக்கிறீர்கள்?/ Whom do you support as Tamil Nadu’s next Chief Minister?': 'Next_CM',
-        'Q4: வரவிருக்கும் சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களிக்க உள்ளீர்கள்?/ Which party/ alliance will you vote in the upcoming assembly elections?': 'Vote_2026',
-        'Q8: முந்தைய (2021) சட்டமன்ற தேர்தலில் நீங்கள் எந்தக் கட்சி / கூட்டணிக்கு வாக்களித்தீர்கள்?/ Which party did you vote in the previous(2021) assembly election?': 'Vote_2021',
-        'Q13: சாதி/Caste': 'Caste',
-        'Q9: பாலினம்/Gender': 'Gender',
-        'Q10: வயது பிரிவு/Age Group': 'Age_Group'
-    }
-    df.rename(columns=column_aliases, inplace=True)
-
     columns_to_str = ['MLA_Satisfaction', 'Next_CM', 'Vote_2026', 'Caste', 'transcript']
     for col in columns_to_str:
         if col in df.columns:
@@ -78,12 +77,10 @@ def load_data(path):
     if 'sample_id' not in df.columns:
         df['sample_id'] = df.index.astype(str)
         
-    # Deduplicate columns if any still exist
     df = df.loc[:, ~df.columns.duplicated()]
-        
     return df
 
-df = load_data(DATA_PATH)
+df = load_data()
 if df is not None and st.session_state.engine is None:
     st.session_state.engine = SurveyChatEngine(df)
 

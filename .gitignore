@@ -6,6 +6,7 @@ framework_config.py
 venv/
 .streamlit/secrets.toml
 data/
+!data/production/
 scripts/old/
 **/__pycache__/
 **/*.pyc
