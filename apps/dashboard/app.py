@@ -166,7 +166,7 @@ PLOTLY_LAYOUT = dict(
 COLORS = ["#3b82f6","#10b981","#f59e0b","#8b5cf6","#f43f5e","#06b6d4"]
 
 # ══════════════════════════════════════════════
-#  DB HELPERS
+#  DB HELPERS / API CLIENT
 # ══════════════════════════════════════════════
 def get_db():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
@@ -181,15 +181,36 @@ def get_db():
     conn.commit()
     return conn
 
+def _fetch_api(endpoint: str, params: dict = None):
+    api_url = os.getenv("TELEMETRY_API_URL")
+    api_key = os.getenv("TELEMETRY_API_KEY", "dev-secret-key-123")
+    if not api_url:
+        return None
+    import requests
+    try:
+        r = requests.get(f"{api_url.rstrip('/')}{endpoint}", params=params, headers={"Authorization": f"Bearer {api_key}"}, timeout=5)
+        r.raise_for_status()
+        return r.json()
+    except Exception as e:
+        st.warning(f"Failed to fetch {endpoint} via proxy: {e}")
+        return None
+
 @st.cache_data(ttl=15)
 def load_llm(start, end, app):
-    conn = get_db()
-    q = "SELECT * FROM llm_events WHERE date(timestamp) BETWEEN ? AND ?"
-    p = [start, end]
-    if app != "All":
-        q += " AND app_name=?"; p.append(app)
-    df = pd.read_sql_query(q+" ORDER BY timestamp DESC", conn, params=p)
-    conn.close()
+    df = pd.DataFrame()
+    if os.getenv("TELEMETRY_API_URL"):
+        data = _fetch_api("/api/telemetry/llm", {"start": start, "end": end, "app": app})
+        if data is not None:
+            df = pd.DataFrame(data)
+    else:
+        conn = get_db()
+        q = "SELECT * FROM llm_events WHERE date(timestamp) BETWEEN ? AND ?"
+        p = [start, end]
+        if app != "All":
+            q += " AND app_name=?"; p.append(app)
+        df = pd.read_sql_query(q+" ORDER BY timestamp DESC", conn, params=p)
+        conn.close()
+        
     if not df.empty:
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         df["date"] = df["timestamp"].dt.date
@@ -199,13 +220,20 @@ def load_llm(start, end, app):
 
 @st.cache_data(ttl=15)
 def load_sarvam(start, end, app):
-    conn = get_db()
-    q = "SELECT * FROM sarvam_events WHERE date(timestamp) BETWEEN ? AND ?"
-    p = [start, end]
-    if app != "All":
-        q += " AND app_name=?"; p.append(app)
-    df = pd.read_sql_query(q+" ORDER BY timestamp DESC", conn, params=p)
-    conn.close()
+    df = pd.DataFrame()
+    if os.getenv("TELEMETRY_API_URL"):
+        data = _fetch_api("/api/telemetry/sarvam", {"start": start, "end": end, "app": app})
+        if data is not None:
+            df = pd.DataFrame(data)
+    else:
+        conn = get_db()
+        q = "SELECT * FROM sarvam_events WHERE date(timestamp) BETWEEN ? AND ?"
+        p = [start, end]
+        if app != "All":
+            q += " AND app_name=?"; p.append(app)
+        df = pd.read_sql_query(q+" ORDER BY timestamp DESC", conn, params=p)
+        conn.close()
+        
     if not df.empty:
         df["timestamp"] = pd.to_datetime(df["timestamp"])
         df["date"] = df["timestamp"].dt.date
@@ -214,6 +242,10 @@ def load_sarvam(start, end, app):
     return df
 
 def app_list():
+    if os.getenv("TELEMETRY_API_URL"):
+        data = _fetch_api("/api/telemetry/apps")
+        return data if data else []
+        
     conn = get_db()
     rows = conn.execute("SELECT DISTINCT app_name FROM llm_events UNION SELECT DISTINCT app_name FROM sarvam_events").fetchall()
     conn.close()

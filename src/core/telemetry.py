@@ -67,6 +67,27 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
     return (input_tokens * rates["input"] + output_tokens * rates["output"]) / 1_000_000
 
 # ── Public logging functions ───────────────────────────────────────────────────
+def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
+    api_url = os.getenv("TELEMETRY_API_URL")
+    api_key = os.getenv("TELEMETRY_API_KEY", "dev-secret-key-123")
+    
+    if api_url:
+        import requests
+        def _run_req():
+            try:
+                # Fire and forget over network
+                requests.post(
+                    f"{api_url.rstrip('/')}{endpoint}",
+                    json=payload,
+                    headers={"Authorization": f"Bearer {api_key}"},
+                    timeout=3
+                )
+            except Exception as e:
+                print(f"[telemetry] API send error: {e}")
+        threading.Thread(target=_run_req, daemon=True).start()
+    else:
+        _async_write(sql, params)
+
 def log_llm_call(
     *,
     app_name: str,
@@ -80,17 +101,24 @@ def log_llm_call(
     query_type: str = "general",
 ):
     cost = estimate_cost(model, input_tokens, output_tokens)
+    ts = datetime.datetime.utcnow().isoformat()
     row = (
-        app_name, model, query_type,
-        user_query[:500], response[:300],
-        input_tokens, output_tokens,
-        round(cost, 8), round(latency_ms, 1),
-        datetime.datetime.utcnow().isoformat(),
+        app_name, model, query_type, user_query[:500], response[:300],
+        input_tokens, output_tokens, round(cost, 8), round(latency_ms, 1), ts
     )
-    _async_write("INSERT INTO llm_events "
-                 "(app_name, model, query_type, user_query, response_preview, "
-                 "input_tokens, output_tokens, cost_usd, latency_ms, timestamp) "
-                 "VALUES (?,?,?,?,?,?,?,?,?,?)", row)
+    
+    payload = {
+        "app_name": app_name, "model": model, "query_type": query_type,
+        "user_query": user_query[:500], "response_preview": response[:300],
+        "input_tokens": input_tokens, "output_tokens": output_tokens,
+        "cost_usd": round(cost, 8), "latency_ms": round(latency_ms, 1), "timestamp": ts
+    }
+    
+    sql = ("INSERT INTO llm_events "
+           "(app_name, model, query_type, user_query, response_preview, "
+           "input_tokens, output_tokens, cost_usd, latency_ms, timestamp) "
+           "VALUES (?,?,?,?,?,?,?,?,?,?)")
+    _send_to_api_or_db("/api/telemetry/llm", payload, sql, row)
 
 
 def log_sarvam_call(
@@ -104,16 +132,24 @@ def log_sarvam_call(
     num_chunks: int = 1,
 ):
     cost = round((audio_duration_sec / 60) * SARVAM_COST_PER_MIN, 8)
+    ts = datetime.datetime.utcnow().isoformat()
     row = (
-        app_name, audio_source,
-        round(audio_duration_sec, 2), cost,
-        round(latency_ms, 1), language_code, num_chunks,
-        datetime.datetime.utcnow().isoformat(),
+        app_name, audio_source, round(audio_duration_sec, 2), cost,
+        round(latency_ms, 1), language_code, num_chunks, ts
     )
-    _async_write("INSERT INTO sarvam_events "
-                 "(app_name, audio_source, audio_duration_sec, cost_usd, "
-                 "latency_ms, language_code, num_chunks, timestamp) "
-                 "VALUES (?,?,?,?,?,?,?,?)", row)
+    
+    payload = {
+        "app_name": app_name, "audio_source": audio_source, 
+        "audio_duration_sec": round(audio_duration_sec, 2), "cost_usd": cost,
+        "latency_ms": round(latency_ms, 1), "language_code": language_code, 
+        "num_chunks": num_chunks, "timestamp": ts
+    }
+    
+    sql = ("INSERT INTO sarvam_events "
+           "(app_name, audio_source, audio_duration_sec, cost_usd, "
+           "latency_ms, language_code, num_chunks, timestamp) "
+           "VALUES (?,?,?,?,?,?,?,?)")
+    _send_to_api_or_db("/api/telemetry/sarvam", payload, sql, row)
 
 
 def _async_write(sql: str, params: tuple):
