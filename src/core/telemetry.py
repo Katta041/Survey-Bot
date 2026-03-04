@@ -74,16 +74,18 @@ def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
     if not api_url:
         try:
             import streamlit as st
-            api_url = st.secrets.get("TELEMETRY_API_URL")
-            api_key = st.secrets.get("TELEMETRY_API_KEY", "dev-secret-key-123")
-        except Exception:
-            pass
+            api_url = str(st.secrets.get("TELEMETRY_API_URL", ""))
+            api_key = str(st.secrets.get("TELEMETRY_API_KEY", ""))
+        except Exception as e:
+            print(f"[telemetry] Secrets fallback error: {e}")
             
-    api_key = api_key or "dev-secret-key-123"
+    api_url = api_url.strip() if api_url else ""
+    api_key = api_key.strip() if api_key else "dev-secret-key-123"
     
-    if api_url:
+    if api_url and api_url.startswith("http"):
         import requests
         try:
+            # print(f"[telemetry] Sending POST to {api_url.rstrip('/')}{endpoint}")
             requests.post(
                 f"{api_url.rstrip('/')}{endpoint}",
                 json=payload,
@@ -93,6 +95,7 @@ def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
         except Exception as e:
             print(f"[telemetry] API send error: {e}")
     else:
+        # print(f"[telemetry] No valid API URL found (val: {api_url}), falling back to SQLite")
         _async_write(sql, params)
 
 def log_llm_call(
