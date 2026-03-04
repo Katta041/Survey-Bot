@@ -83,18 +83,15 @@ def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
     
     if api_url:
         import requests
-        def _run_req():
-            try:
-                # Fire and forget over network
-                requests.post(
-                    f"{api_url.rstrip('/')}{endpoint}",
-                    json=payload,
-                    headers={"Authorization": f"Bearer {api_key}"},
-                    timeout=3
-                )
-            except Exception as e:
-                print(f"[telemetry] API send error: {e}")
-        threading.Thread(target=_run_req, daemon=True).start()
+        try:
+            requests.post(
+                f"{api_url.rstrip('/')}{endpoint}",
+                json=payload,
+                headers={"Authorization": f"Bearer {api_key}"},
+                timeout=5
+            )
+        except Exception as e:
+            print(f"[telemetry] API send error: {e}")
     else:
         _async_write(sql, params)
 
