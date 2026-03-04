@@ -243,7 +243,7 @@ with st.sidebar:
 
     st.markdown("<div style='height:1px;background:#1f2937;margin:20px 0'></div>", unsafe_allow_html=True)
 
-    if st.button("↺  Refresh", use_container_width=True):
+    if st.button("↺  Refresh", width='stretch'):
         st.cache_data.clear()
         st.rerun()
 
@@ -328,7 +328,7 @@ with tab_overview:
                     fill="tozeroy", name="Sarvam", line=dict(color="#10b981", width=2),
                     fillcolor="rgba(16,185,129,0.15)"))
                 fig.update_layout(**PLOTLY_LAYOUT, height=220)
-                st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
         # Daily call volume bars
         with r1c2:
@@ -346,7 +346,7 @@ with tab_overview:
                 fig2.add_trace(go.Bar(x=dv["date"].astype(str), y=dv["Sarvam"], name="Sarvam",
                     marker_color="#10b981", marker_line_width=0))
                 fig2.update_layout(**PLOTLY_LAYOUT, barmode="group", height=220)
-                st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig2, width='stretch', config={"displayModeBar": False})
 
         r2c1, r2c2 = st.columns(2)
         with r2c1:
@@ -359,7 +359,7 @@ with tab_overview:
                 fig3.add_trace(go.Bar(x=dt["date"].astype(str), y=dt["output_tokens"], name="Output",
                     marker_color="#8b5cf6", marker_line_width=0))
                 fig3.update_layout(**PLOTLY_LAYOUT, barmode="stack", height=220)
-                st.plotly_chart(fig3, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig3, width='stretch', config={"displayModeBar": False})
 
         with r2c2:
             st.markdown("##### Cost by Query Type")
@@ -375,7 +375,7 @@ with tab_overview:
                 fig4.update_layout(**PLOTLY_LAYOUT, height=220,
                     annotations=[dict(text=f"${qt['cost_usd'].sum():.4f}", x=0.5, y=0.5,
                         font=dict(size=14, color="#f9fafb"), showarrow=False)])
-                st.plotly_chart(fig4, use_container_width=True, config={"displayModeBar": False})
+                st.plotly_chart(fig4, width='stretch', config={"displayModeBar": False})
 
 # ─── OpenAI ───────────────────────────────────────────────────────────────────
 with tab_llm:
@@ -402,11 +402,11 @@ with tab_llm:
             layout_vars["yaxis"] = dict(title="Cost USD", gridcolor="#1f2937", zeroline=False)
             layout_vars["yaxis2"] = dict(title="Latency ms", overlaying="y", side="right", gridcolor="#1f2937", zeroline=False)
             fig.update_layout(**layout_vars)
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
             ms["Cost_USD"] = ms["Cost_USD"].round(6)
             ms["Avg_Latency_ms"] = ms["Avg_Latency_ms"].round(1)
-            st.dataframe(ms, hide_index=True, use_container_width=True)
+            st.dataframe(ms, hide_index=True, width='stretch')
 
         with mc2:
             st.markdown("##### Calls by Query Type")
@@ -423,14 +423,14 @@ with tab_llm:
                 textfont=dict(color="#9ca3af"),
             ))
             fig2.update_layout(**PLOTLY_LAYOUT, height=200)
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig2, width='stretch', config={"displayModeBar": False})
 
             st.markdown("##### Top Questions Asked")
             top_q = llm[["timestamp","query_type","user_query","cost_usd","latency_ms"]].head(10)
             top_q["timestamp"] = top_q["timestamp"].dt.strftime("%m/%d %H:%M")
             top_q["cost_usd"] = top_q["cost_usd"].round(6)
             top_q["latency_ms"] = top_q["latency_ms"].round(0).astype(int)
-            st.dataframe(top_q, hide_index=True, use_container_width=True)
+            st.dataframe(top_q, hide_index=True, width='stretch')
 
 # ─── Sarvam ───────────────────────────────────────────────────────────────────
 with tab_sarvam:
@@ -449,7 +449,7 @@ with tab_sarvam:
             ))
             fig.update_layout(**PLOTLY_LAYOUT, height=220,
                 yaxis_title="Minutes")
-            st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
         with sc2:
             st.markdown("##### Chunks Distribution")
@@ -459,7 +459,7 @@ with tab_sarvam:
                 fillcolor="rgba(139,92,246,0.15)",
             ))
             fig2.update_layout(**PLOTLY_LAYOUT, height=220)
-            st.plotly_chart(fig2, use_container_width=True, config={"displayModeBar": False})
+            st.plotly_chart(fig2, width='stretch', config={"displayModeBar": False})
 
         st.markdown("##### Transcription Event Log")
         show = sarv[["timestamp","app_name","audio_source","audio_duration_sec","num_chunks","language_code","cost_usd","latency_ms"]].copy()
@@ -467,7 +467,7 @@ with tab_sarvam:
         show["audio_duration_sec"] = show["audio_duration_sec"].round(1)
         show["cost_usd"] = show["cost_usd"].round(6)
         show["latency_ms"] = show["latency_ms"].round(0).astype(int)
-        st.dataframe(show, hide_index=True, use_container_width=True)
+        st.dataframe(show, hide_index=True, width='stretch')
 
 # ─── Traces ───────────────────────────────────────────────────────────────────
 with tab_traces:
@@ -483,7 +483,7 @@ with tab_traces:
         fig.update_layout(**PLOTLY_LAYOUT, height=180,
             xaxis_title="Latency (ms)", yaxis_title="Count",
             title=dict(text="Latency Distribution", font=dict(color="#9ca3af", size=11)))
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
         st.markdown("##### Full LLM Trace Log")
         trace_show = llm[["timestamp","app_name","query_type","user_query","response_preview",
@@ -491,7 +491,7 @@ with tab_traces:
         trace_show["timestamp"]   = trace_show["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
         trace_show["cost_usd"]    = trace_show["cost_usd"].round(6)
         trace_show["latency_ms"]  = trace_show["latency_ms"].round(0).astype(int)
-        st.dataframe(trace_show, hide_index=True, use_container_width=True, height=420)
+        st.dataframe(trace_show, hide_index=True, width='stretch', height=420)
 
 # ─── By App ───────────────────────────────────────────────────────────────────
 with tab_apps:
@@ -517,11 +517,11 @@ with tab_apps:
 
         fig.update_layout(**PLOTLY_LAYOUT, barmode="group", height=220,
             title=dict(text="Requests per App", font=dict(color="#9ca3af",size=11)))
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+        st.plotly_chart(fig, width='stretch', config={"displayModeBar": False})
 
         app_stats["Cost_USD"] = app_stats["Cost_USD"].round(6)
         app_stats["Avg_Latency_ms"] = app_stats["Avg_Latency_ms"].round(1)
-        st.dataframe(app_stats, hide_index=True, use_container_width=True)
+        st.dataframe(app_stats, hide_index=True, width='stretch')
 
         # App reference cards
         st.markdown("<div class='section-label'>Deployed Apps</div>", unsafe_allow_html=True)

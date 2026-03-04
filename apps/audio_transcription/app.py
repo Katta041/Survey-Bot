@@ -250,7 +250,7 @@ if audio_file:
     st.subheader("🎵 Audio Preview")
     st.audio(audio_bytes_raw, format='audio/wav')
     
-    if st.button("🚀 Process Audio", type="primary", use_container_width=True):
+    if st.button("🚀 Process Audio", type="primary", width='stretch'):
         # 1. Conversion
         with st.status("Preprocessing Audio...", expanded=True) as status:
             st.write("Converting to 16kHz mono format...")
