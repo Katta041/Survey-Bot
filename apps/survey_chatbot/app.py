@@ -215,4 +215,9 @@ if st.session_state.messages and st.session_state.messages[-1]["role"] == "user"
                 if decision.get("type") in ["search", "more_results"]:
                     st.write(f"**Keywords:** {st.session_state.last_search.get('keywords')}")
                     st.write(f"**Matches:** {total if 'total' in locals() else 'N/A'}")
-                    # st.write(f"**Matches Found:** {len(context) if context else 0}")
+                try:
+                    import os
+                    db_url = os.getenv('TELEMETRY_API_URL') or st.secrets.get('TELEMETRY_API_URL', 'Not Set')
+                    st.write(f"**Telemetry API URL:** `{db_url}`")
+                except Exception as e:
+                    st.write(f"**Telemetry Config Error:** {e}")
