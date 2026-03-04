@@ -95,26 +95,62 @@ with st.sidebar:
     st.title("Settings ⚙️")
     language = st.radio("Response Language / மொழி:", ["English", "Tamil (தமிழ்)"])
     st.markdown("---")
-    st.markdown("**Dataset Info:**")
-    st.write(f"Total Records: {len(df) if df is not None else 0}")
+    
+    # Dataset Info
+    st.markdown("**📍 Constituency:** Thiruvottiyur, Chennai")
+    st.markdown("**📅 Survey Period:** Feb 19–20, 2026")
+    if df is not None:
+        st.markdown(f"**🎙️ Respondents:** {len(df):,}")
+        if 'Next_CM' in df.columns:
+            top_cm = df['Next_CM'].value_counts().index[0].split('/')[-1].strip() if len(df['Next_CM'].value_counts()) > 0 else "N/A"
+            st.markdown(f"**🏆 Top CM Pick:** {top_cm}")
+        if 'Vote_2026' in df.columns:
+            top_party = df['Vote_2026'].value_counts().index[0].split('/')[-1].strip() if len(df['Vote_2026'].value_counts()) > 0 else "N/A"
+            st.markdown(f"**🗳️ Top Party:** {top_party}")
     
     st.markdown("---")
     st.subheader("💡 Suggested Questions")
     
     selected_lang = "Tamil (தமிழ்)" if "Tamil" in language else "English"
     suggestions = {
-        "English": ["Are people satisfied with the MLA?", "Who do people support for next CM?", "What do people say about Vijay (TVK)?"],
-        "Tamil (தமிழ்)": ["மக்கள் எம்.எல்.ஏ திருப்தியாக இருக்கிறார்களா?", "அடுத்த முதல்வராக யார் வருவார்கள்?", "விஜய் (த.வெ.க) பற்றி மக்கள் என்ன சொல்கிறார்கள்?"]
+        "English": [
+            "Who do people support for next CM?",
+            "Which party will people vote for in 2026?",
+            "Are people satisfied with the MLA?",
+            "Do people want a change in government?",
+            "Break down CM support by caste",
+            "How do women vote vs men?",
+            "What do people say about Vijay (TVK)?",
+            "What are people's main concerns?",
+            "What do people say about DMK government schemes?",
+            "Show TVK vs DMK support numbers",
+        ],
+        "Tamil (தமிழ்)": [
+            "அடுத்த முதல்வராக யாரை மக்கள் ஆதரிக்கிறார்கள்?",
+            "2026 தேர்தலில் எந்த கட்சிக்கு வாக்களிப்பார்கள்?",
+            "மக்கள் எம்.எல்.ஏ திருப்தியாக இருக்கிறார்களா?",
+            "ஆட்சி மாற்றம் வேண்டும் என்று நினைக்கிறார்களா?",
+            "சாதி வாரியாக முதல்வர் ஆதரவு என்ன?",
+            "விஜய் (த.வெ.க) பற்றி மக்கள் என்ன சொல்கிறார்கள்?",
+            "மக்களின் முக்கிய கோரிக்கைகள் என்ன?",
+            "திமுக அரசு திட்டங்களை பற்றி என்ன சொல்கிறார்கள்?",
+        ]
     }
     
     for q in suggestions[selected_lang]:
-        if st.button(q):
+        if st.button(q, key=f"sugg_{q[:20]}"):
             st.session_state.messages.append({"role": "user", "content": q})
             st.rerun()
 
 # --- Main Interface ---
-st.title("🗳️ Survey Data Intelligence Chatbot (TN)")
-st.markdown("Query thousands of citizen survey transcripts with natural language.")
+st.title("🗳️ Thiruvottiyur Constituency — Survey Intelligence Chatbot")
+st.markdown(
+    "**📍 Thiruvottiyur, Chennai** &nbsp;|&nbsp; "
+    f"**🎙️ {len(df):,} Respondents** &nbsp;|&nbsp; "
+    "**📅 Feb 19–20, 2026**"
+    if df is not None else ""
+)
+st.markdown("Ask any question about the survey data in natural language — statistics, opinions, or qualitative insights.")
 
 # Display Chat History
 for message in st.session_state.messages:
