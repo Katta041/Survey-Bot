@@ -17,47 +17,62 @@ class SurveyChatEngine:
         unique_vote = self.df['Vote_2026'].unique().tolist() if 'Vote_2026' in self.df.columns else []
         
         system_prompt = f"""
-        You are a data analyst assistant for a political survey dataset in Tamil Nadu.
-        The dataset has columns: 
-        - `MLA_Satisfaction` (Are you satisfied with the MLA?)
-        - `Desires_Change` (Do you feel a change in govt is needed?)
-        - `Next_CM` (Whom do you support as next CM?)
-        - `Vote_2026` (Which party will you vote for?)
-        - `Caste`, `Age_Group`, `Gender`
-        - `QC Comment`
-        - `transcript` (Tamil Audio Transcript)
-        
-        ### DATASET VOCABULARY (Colloquial Tamil Terms):
-        - **Infrastructure:**
-          - Roads: "சாலை" (Road), "ரோடு" (Road), "குழிகள்" (Potholes)
-          - Water: "தண்ணீர்" (Water), "குடிநீர்" (Drinking Water), "குழாய்" (Tap)
-          - Power: "மின்சாரம்" (Electricity), "கரண்ட்" (Current)
-        - **Schemes:**
-          - "திட்டம்" (Scheme), "உதவித்தொகை" (Pension), "ரேஷன்" (Ration)
-        - **Leaders & Parties:**
-          - "திமுக" (DMK), "அதிமுக" (ADMK), "விஜய்" (Vijay), "த.வெ.க" (TVK), "ஸ்டாலின்" (Stalin), "எடப்பாடி" (Edappadi)
-          - "எம்.எல்.ஏ" (MLA), "முதல்வர்" (CM), "கட்சி" (Party)
-        - **Sentiment:**
-          - Positive: "நல்லா இருக்கு" (Good), "பரவாயில்லை" (Okay/Not bad), "திருப்தி" (Satisfied)
-          - Negative: "மோசம்" (Bad), "திருப்தி இல்லை" (Not satisfied)
-          - Change: "மாற்றம் தேவை" (Need change), "வேண்டாம்" (Don't want)
+You are a data analyst assistant for a Tamil Nadu political survey dataset (Thiruvottiyur constituency).
+The pandas DataFrame is called `df` and has these columns:
+- `MLA_Satisfaction` — MLA satisfaction response (string values)
+- `Desires_Change`   — Whether govt change is needed (string values)
+- `Next_CM`         — Whom they support as next CM (string values)
+- `Vote_2026`       — Which party they plan to vote (string values)
+- `Caste`           — Caste of respondent
+- `Age_Group`       — Age group
+- `Gender`          — Gender
+- `Occupation`      — Occupation
+- `transcript`      — Tamil audio transcript text
+- `qc_comment`      — QC reviewer comment
 
-        ### SCHEMA MAPPING:
-        - **Caste:** {unique_castes}
-        - **Next_CM:** {unique_next_cm}
-        - **Vote_2026:** {unique_vote}
-        
-        Current User Query: "{user_query}"
-        Output Language: {lang}
-        Previous Context: {history[-3:] if history else "None"}
+### ACTUAL DATA VALUES:
+- **Next_CM unique values:** {unique_next_cm}
+- **Vote_2026 unique values:** {unique_vote}
+- **Caste unique values:** {unique_castes}
 
-        DECISION LOGIC:
-        1. If the user asks for a COUNT, AGGREGATION, or STATISTIC: Return {{"type": "code", "code": "..."}}
-        2. If the user asks for QUALITATIVE info: Return {{"type": "search", "keywords": ["..."], "topic": "..."}}
-        3. If the user asks for MORE info on previous topic: Return {{"type": "more_results"}}
-        4. If general chat: Return {{"type": "chat", "response": "..."}}
-        
-        Output MUST be valid JSON.
+### DECISION RULES — follow these STRICTLY:
+
+**Use `code` type for ANY question about:**
+- "who do people support / vote for / prefer"
+- "how many", "what percentage", "count", "breakdown"
+- "are people satisfied / happy / unhappy"
+- "do people want change"
+- specific candidate or party comparisons
+- demographics (by caste, gender, age)
+→ Return: {{"type": "code", "code": "<valid pandas expression that computes the answer>"}}
+
+**Use `search` type for:**
+- "what do people say about X" (qualitative opinions)
+- "why do people support X"
+- "what are people's concerns about X"
+→ Return: {{"type": "search", "keywords": ["..."], "topic": "..."}}
+
+**Use `more_results` type for:**
+- "show me more", "give more examples"
+
+**Use `chat` type ONLY for:**
+- greetings, meta questions about the chatbot itself
+- questions completely unrelated to the survey data
+
+### EXAMPLES:
+Q: "Who do people support for next CM?" → {{"type": "code", "code": "df['Next_CM'].value_counts()"}}
+Q: "Are people satisfied with the MLA?" → {{"type": "code", "code": "df['MLA_Satisfaction'].value_counts()"}}
+Q: "Which party will people vote for?" → {{"type": "code", "code": "df['Vote_2026'].value_counts()"}}
+Q: "Do people want a change in government?" → {{"type": "code", "code": "df['Desires_Change'].value_counts()"}}
+Q: "How many Vanniyar respondents support Vijay?" → {{"type": "code", "code": "df[df['Caste']=='Vanniyar']['Next_CM'].value_counts()"}}
+Q: "What do people say about roads?" → {{"type": "search", "keywords": ["சாலை", "ரோடு", "road"], "topic": "roads infrastructure"}}
+Q: "What are people's concerns?" → {{"type": "search", "keywords": ["மோசம்", "பிரச்சனை", "problem", "issue"], "topic": "citizen concerns"}}
+
+Current User Query: "{user_query}"
+Output Language: {lang}
+Previous Context: {history[-3:] if history else "None"}
+
+CRITICAL: Output ONLY valid JSON. No explanation. No markdown. Just JSON.
         """
         
         try:
@@ -176,8 +191,9 @@ class SurveyChatEngine:
             f"User Question: '{query}'\n"
             f"Data Result: {data}\n"
             f"Task: Respond to the user naturally in {lang}.\n"
+            f"- Present the data clearly, using percentages or counts where helpful.\n"
             f"- Do NOT mention 'code execution' or 'dataframe'.\n"
-            f"- Just state the answer clearly."
+            f"- Just state the answer clearly and concisely."
         )
         try:
             res = self.client.chat.completions.create(
