@@ -183,9 +183,20 @@ def get_db():
 
 def _fetch_api(endpoint: str, params: dict = None):
     api_url = os.getenv("TELEMETRY_API_URL")
-    api_key = os.getenv("TELEMETRY_API_KEY", "dev-secret-key-123")
+    api_key = os.getenv("TELEMETRY_API_KEY")
+    
+    if not api_url:
+        try:
+            api_url = st.secrets.get("TELEMETRY_API_URL")
+            api_key = st.secrets.get("TELEMETRY_API_KEY", "dev-secret-key-123")
+        except Exception:
+            pass
+            
+    api_key = api_key or "dev-secret-key-123"
+    
     if not api_url:
         return None
+        
     import requests
     try:
         r = requests.get(f"{api_url.rstrip('/')}{endpoint}", params=params, headers={"Authorization": f"Bearer {api_key}"}, timeout=5)
