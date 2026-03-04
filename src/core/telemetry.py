@@ -69,7 +69,17 @@ def estimate_cost(model: str, input_tokens: int, output_tokens: int) -> float:
 # ── Public logging functions ───────────────────────────────────────────────────
 def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
     api_url = os.getenv("TELEMETRY_API_URL")
-    api_key = os.getenv("TELEMETRY_API_KEY", "dev-secret-key-123")
+    api_key = os.getenv("TELEMETRY_API_KEY")
+    
+    if not api_url:
+        try:
+            import streamlit as st
+            api_url = st.secrets.get("TELEMETRY_API_URL")
+            api_key = st.secrets.get("TELEMETRY_API_KEY", "dev-secret-key-123")
+        except Exception:
+            pass
+            
+    api_key = api_key or "dev-secret-key-123"
     
     if api_url:
         import requests
