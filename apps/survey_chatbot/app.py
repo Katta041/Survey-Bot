@@ -137,8 +137,8 @@ with st.sidebar:
         ]
     }
     
-    for q in suggestions[selected_lang]:
-        if st.button(q, key=f"sugg_{q[:20]}"):
+    for i, q in enumerate(suggestions[selected_lang]):
+        if st.button(q, key=f"sugg_{selected_lang[:2]}_{i}"):
             st.session_state.messages.append({"role": "user", "content": q})
             st.rerun()
 
