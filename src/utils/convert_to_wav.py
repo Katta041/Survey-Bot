@@ -33,8 +33,8 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: python convert_to_wav.py <input> <output>")
         # Default test
-        base_dir = "./audio_samples"
-        input_f = os.path.join(base_dir, "Valid_45c3ab84-6136-4d54-9601-544bdb5d7c6d.mp3")
+        base_dir = "data/audio_samples"
+        input_f = os.path.join(base_dir, "synthetic_tone_440hz.wav")
         output_f = os.path.join(base_dir, "debug_sample.wav")
         convert_to_wav(input_f, output_f)
     else:

@@ -82,7 +82,7 @@ def _send_to_api_or_db(endpoint: str, payload: dict, sql: str, params: tuple):
     api_url = api_url.strip() if api_url else ""
     api_key = api_key.strip() if api_key else ""
     
-    if api_url and api_url.startswith("http"):
+    if api_url and api_url.startswith("http") and api_key:
         import requests
         try:
             # print(f"[telemetry] Sending POST to {api_url.rstrip('/')}{endpoint}")

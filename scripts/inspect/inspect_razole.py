@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-file_path = './Razole_Overall Data_V2.xlsx'
+file_path = 'data/raw/Razole_Overall Data_V2.xlsx'
 
 print(f"Inspecting file: {file_path}")
 

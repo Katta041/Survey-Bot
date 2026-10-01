@@ -4,7 +4,7 @@ import os
 print("Creating Anonymized Dataset for TN Chatbot...")
 
 # 1. Load Transcripts
-transcript_path = "./audio_samples/tn_samples/tn_transcribed_metadata_sarvam.csv"
+transcript_path = "data/audio_samples/tn_samples/tn_transcribed_metadata_sarvam.csv"
 df_transcripts = pd.read_csv(transcript_path)
 
 # Drop any previous PII or overlapping columns from transcripts
@@ -14,7 +14,7 @@ for c in cols_to_drop:
         df_transcripts.drop(columns=[c], inplace=True)
 
 # 2. Load Excel
-excel_path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+excel_path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
 df_excel = pd.read_excel(excel_path)
 for c in ['Gender', 'Caste']:
     if c in df_excel.columns:
@@ -62,6 +62,6 @@ if 'sample_id' not in df.columns:
     df['sample_id'] = df.index.astype(str)
 
 # 6. Save
-output_path = "./tn_app_data_anonymized.csv"
+output_path = "data/results/tn_app_data_anonymized.csv"
 df.to_csv(output_path, index=False)
 print(f"✅ Anonymized dataset saved to: {output_path} with {len(df)} rows.")

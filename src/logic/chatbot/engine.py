@@ -17,7 +17,7 @@ class SurveyChatEngine:
         unique_vote = self.df['Vote_2026'].unique().tolist() if 'Vote_2026' in self.df.columns else []
         
         system_prompt = f"""
-You are a data analyst assistant for a Tamil Nadu political survey dataset (Thiruvottiyur constituency).
+You are a data analyst assistant for a Tamil Nadu political survey dataset (one assembly constituency).
 The pandas DataFrame is called `df` and has these columns:
 - `MLA_Satisfaction` — MLA satisfaction response (string values)
 - `Desires_Change`   — Whether govt change is needed (string values)

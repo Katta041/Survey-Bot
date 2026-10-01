@@ -12,7 +12,7 @@ def debug_upload():
         return
 
     # Pick one file (MP3 check)
-    test_file = "./audio_samples/Valid_45c3ab84-6136-4d54-9601-544bdb5d7c6d.mp3"
+    test_file = "data/audio_samples/synthetic_tone_440hz.wav"
     if not os.path.exists(test_file):
         print(f"Test file not found: {test_file}")
         return

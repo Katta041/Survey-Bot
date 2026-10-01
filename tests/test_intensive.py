@@ -25,11 +25,11 @@ except:
     print("API Key missing")
     exit()
 
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 df = pd.read_csv(DATA_PATH)
 # Merge Excel logic (simplified for test)
 try:
-    df_excel = pd.read_excel("./Razole_Overall Data_V2.xlsx", sheet_name='Data')
+    df_excel = pd.read_excel("data/raw/Razole_Overall Data_V2.xlsx", sheet_name='Data')
     df = pd.merge(df, df_excel, left_on='url', right_on='Audio URL', how='left', suffixes=('', '_excel'))
     column_aliases = {
         'Q10: మీరు 2024 అసెంబ్లీ ఎన్నికలో ఏ పార్టీ కి వోట్ వేశారు?': 'Vote_2024',

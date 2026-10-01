@@ -15,7 +15,7 @@ except ImportError:
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Load Data
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 if not os.path.exists(DATA_PATH):
     print(f"Error: Data file not found at {DATA_PATH}")
     sys.exit(1)
@@ -24,7 +24,7 @@ df_transcripts = pd.read_csv(DATA_PATH)
 print("DEBUG: Transcripts Columns:", df_transcripts.columns.tolist())
 
 # Load Excel Data for Election Columns
-excel_path = "./Razole_Overall Data_V2.xlsx"
+excel_path = "data/raw/Razole_Overall Data_V2.xlsx"
 if os.path.exists(excel_path):
     try:
         df_excel = pd.read_excel(excel_path, sheet_name='Data')

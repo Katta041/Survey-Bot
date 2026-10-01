@@ -4,7 +4,7 @@ import os
 import framework_config as config
 
 def download_audio_samples_tn():
-    tn_excel_path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+    tn_excel_path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
     tn_download_dir = os.path.join(config.AUDIO_DOWNLOAD_DIR, 'tn_samples')
     os.makedirs(tn_download_dir, exist_ok=True)
     

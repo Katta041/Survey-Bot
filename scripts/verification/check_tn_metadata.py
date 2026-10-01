@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-tn_dir = "./audio_samples/tn_samples"
+tn_dir = "data/audio_samples/tn_samples"
 metadata_path = os.path.join(tn_dir, "tn_downloaded_metadata.csv")
 
 if os.path.exists(metadata_path):

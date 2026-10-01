@@ -2,7 +2,7 @@ import pandas as pd
 from collections import Counter
 import re
 
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 df = pd.read_csv(DATA_PATH)
 
 # Common political concepts we want to map

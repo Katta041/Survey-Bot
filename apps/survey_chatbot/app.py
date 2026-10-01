@@ -97,8 +97,8 @@ with st.sidebar:
     st.markdown("---")
     
     # Dataset Info
-    st.markdown("**📍 Constituency:** Thiruvottiyur, Chennai")
-    st.markdown("**📅 Survey Period:** Feb 19–20, 2026")
+    st.markdown("**📍 Constituency:** Sample constituency")
+    st.markdown("**Dataset:** Synthetic demo data")
     if df is not None:
         st.markdown(f"**🎙️ Respondents:** {len(df):,}")
         if 'Next_CM' in df.columns:
@@ -143,11 +143,11 @@ with st.sidebar:
             st.rerun()
 
 # --- Main Interface ---
-st.title("🗳️ Thiruvottiyur Constituency — Survey Intelligence Chatbot")
+st.title("🗳️ Survey Intelligence Chatbot")
 st.markdown(
-    "**📍 Thiruvottiyur, Chennai** &nbsp;|&nbsp; "
+    "**📍 Sample constituency** &nbsp;|&nbsp; "
     f"**🎙️ {len(df):,} Respondents** &nbsp;|&nbsp; "
-    "**📅 Feb 19–20, 2026**"
+    "**Synthetic demo data**"
     if df is not None else ""
 )
 st.markdown("Ask any question about the survey data in natural language — statistics, opinions, or qualitative insights.")

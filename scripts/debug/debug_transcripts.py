@@ -1,6 +1,6 @@
 import pandas as pd
 
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 df = pd.read_csv(DATA_PATH)
 
 keywords_to_check = [

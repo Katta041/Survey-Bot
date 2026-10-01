@@ -1,6 +1,6 @@
 import pandas as pd
 
-excel_path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+excel_path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
 df = pd.read_excel(excel_path)
 print("Columns:", df.columns.tolist())
 print("\nFirst row sample:")

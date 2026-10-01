@@ -15,7 +15,7 @@ except ImportError:
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # --- Data Loading (TN Specific) ---
-DATA_PATH = "./audio_samples/tn_samples/tn_transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/tn_samples/tn_transcribed_metadata_sarvam.csv"
 if not os.path.exists(DATA_PATH):
     print(f"Error: Data file not found at {DATA_PATH}")
     sys.exit(1)
@@ -26,7 +26,7 @@ for c in cols_to_drop:
     if c in df_transcripts.columns:
         df_transcripts.drop(columns=[c], inplace=True)
 
-excel_path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+excel_path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
 df_excel = pd.read_excel(excel_path)
 df = pd.merge(df_transcripts, df_excel, left_on='url', right_on='Audio URL', how='left')
 

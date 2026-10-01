@@ -1,6 +1,6 @@
 import pandas as pd
 
-file_path = './Razole_Overall Data_V2.xlsx'
+file_path = 'data/raw/Razole_Overall Data_V2.xlsx'
 
 try:
     xl = pd.ExcelFile(file_path)

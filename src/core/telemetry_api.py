@@ -7,12 +7,12 @@ from src.core.config import Config
 
 app = Flask(__name__)
 DB_PATH = Config.TELEMETRY_DB_PATH
-API_KEY = os.getenv("TELEMETRY_API_KEY", "")
+API_KEY = os.getenv("TELEMETRY_API_KEY", "").strip()
 
 def require_api_key(func):
     def wrapper(*args, **kwargs):
         auth_header = request.headers.get("Authorization")
-        if not auth_header or auth_header != f"Bearer {API_KEY}":
+        if not API_KEY or not auth_header or auth_header != f"Bearer {API_KEY}":
             return jsonify({"error": "Unauthorized"}), 401
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
@@ -112,5 +112,7 @@ def get_apps():
     return jsonify([r[0] for r in rows if r[0]])
 
 if __name__ == "__main__":
-    print(f"Starting Secure Telemetry API with key: {API_KEY}")
+    if not API_KEY:
+        raise SystemExit("TELEMETRY_API_KEY is not set. Export a long random token before starting the telemetry API.")
+    print("Starting telemetry API on 127.0.0.1:5005")
     app.run(host="127.0.0.1", port=5005)

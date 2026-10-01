@@ -1,7 +1,7 @@
 from pptx import Presentation
 import os
 
-file_path = './Viralimalai_Baseline Survey Report_V1.pptx'
+file_path = 'data/raw/Viralimalai_Baseline Survey Report_V1.pptx'
 
 print(f"Inspecting file: {file_path}")
 

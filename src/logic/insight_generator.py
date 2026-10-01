@@ -12,7 +12,7 @@ except:
     print("API Key missing")
     exit()
 
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 try:
     df = pd.read_csv(DATA_PATH)
 except:

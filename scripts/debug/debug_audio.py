@@ -3,7 +3,7 @@ import torch
 import av
 import os
 
-filepath = "./audio_samples/Valid_4097eb5d-9bfd-43ad-b6fa-d30160f54301.mp3"
+filepath = "data/audio_samples/synthetic_tone_440hz.wav"
 
 print("--- Torchaudio Info ---")
 print(f"Available Backends: {torchaudio.list_audio_backends()}")

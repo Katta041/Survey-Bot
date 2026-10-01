@@ -18,10 +18,10 @@ except ImportError:
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 # Load Data (Matched with survey_chatbot.py logic)
-DATA_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+DATA_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 try:
     df_transcripts = pd.read_csv(DATA_PATH)
-    excel_path = "./Razole_Overall Data_V2.xlsx"
+    excel_path = "data/raw/Razole_Overall Data_V2.xlsx"
     if os.path.exists(excel_path):
         df_excel = pd.read_excel(excel_path, sheet_name='Data')
         df = pd.merge(df_transcripts, df_excel, left_on='url', right_on='Audio URL', how='left', suffixes=('', '_excel'))

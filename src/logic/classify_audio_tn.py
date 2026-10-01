@@ -157,7 +157,7 @@ TRANSCRIPT (Tamil):
     output_df = pd.DataFrame(results)
     
     # Optional: fetch original Location if missing from metadata
-    excel_path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+    excel_path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
     if os.path.exists(excel_path):
         excel_df = pd.read_excel(excel_path)
         if 'Location' in excel_df.columns and 'Sample ID' in excel_df.columns:

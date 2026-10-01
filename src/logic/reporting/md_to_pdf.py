@@ -2,8 +2,8 @@ import markdown_it
 from weasyprint import HTML
 import os
 
-md_path = "./Thiruvottiyur_Survey_Report.md"
-pdf_path = "./Thiruvottiyur_Survey_Report.pdf"
+md_path = "data/results/Thiruvottiyur_Survey_Report.md"
+pdf_path = "data/results/Thiruvottiyur_Survey_Report.pdf"
 base_url = "./"
 
 print("Reading Markdown...")

@@ -2,8 +2,8 @@ import pandas as pd
 import os
 
 # Paths
-EXCEL_PATH = "./Razole_Overall Data_V2.xlsx"
-TRANSCRIPT_PATH = "./audio_samples/transcribed_metadata_sarvam.csv"
+EXCEL_PATH = "data/raw/Razole_Overall Data_V2.xlsx"
+TRANSCRIPT_PATH = "data/audio_samples/transcribed_metadata_sarvam.csv"
 
 def verify_coverage():
     print("--- DATA COVERAGE AUDIT ---\n")

@@ -13,8 +13,8 @@ try:
 except:
     openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-DATA_PATH = "./tn_app_data_anonymized.csv"
-OUTPUT_PDF = "./Thiruvottiyur_Survey_Report.pdf"
+DATA_PATH = "data/results/tn_app_data_anonymized.csv"
+OUTPUT_PDF = "data/results/Thiruvottiyur_Survey_Report.pdf"
 
 client = openai.OpenAI(api_key=openai.api_key)
 
@@ -151,7 +151,7 @@ def generate_pie_chart(party_name, male_count, female_count, filename):
 # Download Logos Locally for Markdown Preview
 print("Downloading Logos for local rendering...")
 local_logos = {}
-os.makedirs("./logos", exist_ok=True)
+os.makedirs("data/results/logos", exist_ok=True)
 headers = {'User-Agent': 'PoliticalSurveyBot/1.0 (contact@example.com) Python-requests/2.x'}
 for party, url in party_logos.items():
     try:
@@ -167,15 +167,15 @@ for party, url in party_logos.items():
 
 # Generate Charts
 print("Generating Pie Charts...")
-generate_pie_chart("TVK", demographics.get("TVK", {}).get("Male", 0), demographics.get("TVK", {}).get("Female", 0), "./tvk_demographics.png")
-generate_pie_chart("DMK", demographics.get("DMK", {}).get("Male", 0), demographics.get("DMK", {}).get("Female", 0), "./dmk_demographics.png")
+generate_pie_chart("TVK", demographics.get("TVK", {}).get("Male", 0), demographics.get("TVK", {}).get("Female", 0), "data/results/tvk_demographics.png")
+generate_pie_chart("DMK", demographics.get("DMK", {}).get("Male", 0), demographics.get("DMK", {}).get("Female", 0), "data/results/dmk_demographics.png")
 
 # -----------------
 # 4. Generate Markdown
 # -----------------
 print("Generating Markdown Report...")
 
-OUTPUT_MD = "./Thiruvottiyur_Survey_Report.md"
+OUTPUT_MD = "data/results/Thiruvottiyur_Survey_Report.md"
 
 md_template = """# Thiruvottiyur Constituency Survey Report
 

@@ -8,6 +8,8 @@ venv/
 data/*
 !data/production/
 !data/db/
+!data/audio_samples/
+!data/README.md
 scripts/old/
 **/__pycache__/
 **/*.pyc

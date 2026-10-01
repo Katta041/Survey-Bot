@@ -25,7 +25,7 @@ def retrieve_job():
         print("Job Status:", job.get_status())
         
         # Download Outputs
-        output_dir = "./sarvam_outputs"
+        output_dir = "data/sarvam_outputs"
         job.download_outputs(output_dir=output_dir)
         print(f"Downloaded outputs to {output_dir}")
 

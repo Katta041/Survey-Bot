@@ -1,7 +1,7 @@
 import pandas as pd
 import json
 
-path = "./Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
+path = "data/raw/Tamil Nadu/THIRUVOTTIYUR_2026-02-19_to_2026-02-20.xlsx"
 xl = pd.ExcelFile(path)
 print("Sheets:", xl.sheet_names)
 
